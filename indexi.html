@@ -1,0 +1,96 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mini Web Builder</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; background: #f5f5f5; }
+  h1 { margin-top: 20px; }
+  #container { display: flex; width: 95%; max-width: 1200px; margin-top: 20px; }
+  #editor { width: 50%; margin-right: 10px; display: flex; flex-direction: column; }
+  textarea { width: 100%; height: 300px; margin-bottom: 10px; font-family: monospace; font-size: 14px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; resize: vertical; }
+  button { padding: 10px; font-size: 16px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
+  button:hover { background: #0056b3; }
+  #preview { width: 50%; }
+  iframe { width: 100%; height: 620px; border: 1px solid #ccc; border-radius: 5px; }
+</style>
+</head>
+<body>
+
+
+<h1>Mini Web Builder</h1>
+<div id="container">
+  <div id="editor">
+    <label>HTML</label>
+    <textarea id="html">&lt;h1&gt;Hello World&lt;/h1&gt;</textarea>
+    
+    <label>CSS</label>
+    <textarea id="css">body { background: #fff; color: #000; }</textarea>
+    
+    <label>JS</label>
+    <textarea id="js">console.log('Hello!');</textarea>
+    
+    <button id="exportBtn">Export as HTML</button>
+  </div>
+
+
+  <div id="preview">
+    <iframe id="previewFrame"></iframe>
+  </div>
+</div>
+
+
+<script>
+const htmlArea = document.getElementById('html');
+const cssArea = document.getElementById('css');
+const jsArea = document.getElementById('js');
+const iframe = document.getElementById('previewFrame');
+const exportBtn = document.getElementById('exportBtn');
+
+
+function updatePreview() {
+  const htmlContent = htmlArea.value;
+  const cssContent = `<style>${cssArea.value}</style>`;
+  const jsContent = `<script>${jsArea.value}<\/script>`;
+  iframe.srcdoc = htmlContent + cssContent + jsContent;
+}
+
+
+// Update live preview as user types
+htmlArea.addEventListener('input', updatePreview);
+cssArea.addEventListener('input', updatePreview);
+jsArea.addEventListener('input', updatePreview);
+
+
+// Initial preview
+updatePreview();
+
+
+// Export combined HTML
+exportBtn.addEventListener('click', () => {
+  const content = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>My Mini Site</title>
+<style>${cssArea.value}</style>
+</head>
+<body>
+${htmlArea.value}
+<script>${jsArea.value}<\/script>
+</body>
+</html>`;
+  
+  const blob = new Blob([content], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'my-mini-site.html';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+
+
+</body>
+</html>
