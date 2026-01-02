@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <title>Mini Website Builder</title>
 
+<!-- Favicon / App Icon -->
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#020617">
+
 <style>
   * { box-sizing: border-box; }
 
@@ -15,11 +21,20 @@
   }
 
   header {
-    padding: 18px 28px;
-    font-size: 26px;
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 24px;
     font-weight: 800;
     background: #020617;
     border-bottom: 1px solid #1e293b;
+  }
+
+  header img {
+    height: 36px;
+    width: 36px;
+    cursor: pointer;
   }
 
   .container {
@@ -27,7 +42,7 @@
     grid-template-columns: 1fr 1fr 2fr;
     gap: 16px;
     padding: 16px;
-    height: calc(100vh - 80px);
+    height: calc(100vh - 72px);
   }
 
   .panel {
@@ -113,7 +128,10 @@
 
 <body>
 
-<header>Mini Website Builder</header>
+<header>
+  <img src="logo.png" alt="Logo" onclick="location.reload()">
+  <span>Mini Website Builder</span>
+</header>
 
 <div class="container">
 
@@ -122,8 +140,8 @@
     <h2>Insert Code</h2>
     <textarea id="code">
 <h1>Hello 👋</h1>
-<p>This is a real website.</p>
-<p>You can even build a website builder inside this.</p>
+<p>This is a REAL website.</p>
+<p>You can build anything here.</p>
     </textarea>
   </div>
 
@@ -155,12 +173,12 @@ h1 {
     </div>
 
     <div class="publish-box" id="publishBox">
-      <strong>Publishing your website:</strong><br><br>
-      ✔ Your site will download automatically<br>
-      ✔ Netlify will open in a new tab<br>
-      ✔ Drag the file into Netlify Drop<br><br>
-      🔥 You get a real public link instantly.<br>
-      🚫 No domain needed.
+      <strong>Publish your site (FREE):</strong><br><br>
+      ✔ File downloads automatically<br>
+      ✔ Netlify opens in a new tab<br>
+      ✔ Drag file into Netlify Drop<br><br>
+      🚀 You get a public link instantly<br>
+      🚫 No domain needed
     </div>
   </div>
 
@@ -192,8 +210,7 @@ ${code.value}
   updatePreview();
 
   document.getElementById("export").onclick = () => {
-    const content = preview.srcdoc;
-    const blob = new Blob([content], { type: "text/html" });
+    const blob = new Blob([preview.srcdoc], { type: "text/html" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "index.html";
@@ -203,7 +220,6 @@ ${code.value}
   document.getElementById("netlify").onclick = () => {
     document.getElementById("export").click();
     publishBox.style.display = "block";
-
     setTimeout(() => {
       window.open("https://app.netlify.com/drop", "_blank");
     }, 500);
