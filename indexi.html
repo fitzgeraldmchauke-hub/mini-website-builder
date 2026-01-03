@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Mini Website Builder </title>
+<title>Mini Website Builder PRO SaaS</title>
 
 <!-- Favicon only -->
 <link rel="icon" type="image/png" href="logo.png">
@@ -34,21 +34,21 @@
 
 <body>
 
-<header>Mini Website Builder PRO</header>
+<header>Mini Website Builder PRO SaaS</header>
 
 <div class="container">
 
   <!-- LEFT PANEL -->
   <div class="panel">
     <h2>Insert Code</h2>
-    <textarea id="code"><h1>Hello 👋</h1><p>This is a real website.</p></textarea>
+    <textarea id="code" placeholder="Start writing your website here..."></textarea>
     <div class="project-list" id="projects"></div>
   </div>
 
   <!-- MIDDLE PANEL -->
   <div class="panel">
     <h2>CSS Styling</h2>
-    <textarea id="css">body { font-family:Arial; background:#f8fafc; color:#0f172a; padding:20px; } h1 { color:#2563eb; }</textarea>
+    <textarea id="css" placeholder="Add CSS styling here..."></textarea>
     <div class="device-toggle">
       <button onclick="setDevice('desktop')">Desktop</button>
       <button onclick="setDevice('tablet')">Tablet</button>
@@ -110,19 +110,43 @@ function setDevice(device) {
   if(device==='mobile') preview.style.width='375px';
 }
 
-// Project save/load using localStorage
+// Simple account system placeholder
+let currentUser = null;
+const users = {};
+
+function signup(username, password) {
+  if(users[username]) return alert('Username already exists');
+  users[username] = { password, projects: {} };
+  alert('Account created!');
+}
+
+function login(username, password) {
+  if(!users[username] || users[username].password !== password) return alert('Invalid credentials');
+  currentUser = username;
+  alert(`Logged in as ${username}`);
+}
+
+function saveProject(name) {
+  if(!currentUser) return alert('Please log in to save projects');
+  if(!name) return;
+  users[currentUser].projects[name] = { code: code.value, css: css.value };
+  renderProjects();
+}
+
 function loadProject(name) {
-  let projects = JSON.parse(localStorage.getItem('projects')||'{}');
-  if(projects[name]) {
-    code.value = projects[name].code;
-    css.value = projects[name].css;
+  if(!currentUser) return alert('Please log in to load projects');
+  const project = users[currentUser].projects[name];
+  if(project) {
+    code.value = project.code;
+    css.value = project.css;
     updatePreview();
   }
 }
 
 function renderProjects() {
   projectsEl.innerHTML='';
-  let projects = JSON.parse(localStorage.getItem('projects')||'{}');
+  if(!currentUser) return;
+  const projects = users[currentUser].projects;
   for(let name in projects){
     let btn = document.createElement('button');
     btn.textContent = name;
@@ -136,4 +160,3 @@ renderProjects();
 
 </body>
 </html>
-
