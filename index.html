@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><link rel="icon" type="image/png" href="image.png"><meta charset="UTF-8">
+<head>
+<meta charset="UTF-8">
 <title>Mini Website Builder</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -113,7 +114,6 @@ button {
 const codeEl = document.getElementById("code");
 const preview = document.getElementById("preview");
 
-// Escape HTML for Python-like display
 function escapeHTML(str) {
   return str.replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
@@ -121,75 +121,37 @@ function escapeHTML(str) {
 }
 
 function render() {
-  const code = codeEl.value.trim();
+  const code = codeEl.value;
 
   // Detect Python-like code
   const looksLikePython = /print\s*\(|input\s*\(|def\s+|elif|import\s+|:\s*$|True|False|None/.test(code);
-
-  // Detect HTML, CSS, JS
   const looksLikeHTML = /<[^>]+>/.test(code);
   const looksLikeCSS = /\{[\s\S]*?\}/.test(code) && /:/.test(code);
   const looksLikeJS = /function\s*\(|=>|console\.log|\b(let|const|var)\b/.test(code);
 
-  // Python-like display only
   if (looksLikePython && !looksLikeHTML && !looksLikeCSS && !looksLikeJS) {
-    const escaped = escapeHTML(code);
     preview.srcdoc = `
 <!DOCTYPE html>
 <html>
 <body style="font-family:monospace;background:#0f172a;color:#e5e7eb;padding:12px">
 <b>Python-like code (not executed)</b>
-<pre>${escaped}</pre>
+<pre>${escapeHTML(code)}</pre>
 </body>
 </html>`;
     return;
   }
 
-  // --- HTML + CSS + JS rendering ---
-  let html = code;
-  let css = "";
-  let js = "";
-
-  // Extract <style> blocks
-  const styleMatches = code.match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
-  if (styleMatches) {
-    styleMatches.forEach(tag => {
-      const content = tag.replace(/<style[^>]*>|<\/style>/gi, "");
-      css += content + "\n";
-      html = html.replace(tag, "");
-    });
-  }
-
-  // Extract <script> blocks
-  const scriptMatches = code.match(/<script[^>]*>([\s\S]*?)<\/script>/gi);
-  if (scriptMatches) {
-    scriptMatches.forEach(tag => {
-      const content = tag.replace(/<script[^>]*>|<\/script>/gi, "");
-      js += content + "\n";
-      html = html.replace(tag, "");
-    });
-  }
-
-  // Inline JS or CSS if no blocks detected
-  if (!js && looksLikeJS) js = code;
-  if (!css && looksLikeCSS) css = code;
-
+  // Render all user code directly
   preview.srcdoc = `
 <!DOCTYPE html>
 <html>
-<head>
-<style>${css}</style>
-</head>
+<head><style></style></head>
 <body>
-${html}
-<script>
-try { ${js} } catch(e){ console.error(e); }
-</script>
+${code}
 </body>
 </html>`;
 }
 
-// Export HTML file
 function exportSite() {
   const blob = new Blob([preview.srcdoc], { type: "text/html" });
   const a = document.createElement("a");
@@ -198,7 +160,6 @@ function exportSite() {
   a.click();
 }
 
-// Open Netlify drop for publishing
 function publish() {
   exportSite();
   window.open("https://app.netlify.com/drop", "_blank");
