@@ -5,6 +5,9 @@
 <title>Mini Website Builder</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- Favicon only -->
+<link rel="icon" href="image.png">
+
 <style>
 * { box-sizing: border-box; }
 
@@ -60,12 +63,37 @@ textarea {
   border-radius: 10px;
 }
 
-iframe {
+/* Preview area */
+.preview-wrap {
+  position: relative;
   flex: 1;
-  width: 100%;
-  border: none;
   border-radius: 12px;
-  background: #0f172a;
+  overflow: hidden;
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: white;
+}
+
+/* Fullscreen button (YouTube-style) */
+.fullscreen-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.fullscreen-btn:hover {
+  background: rgba(0,0,0,0.8);
 }
 
 .buttons {
@@ -74,7 +102,7 @@ iframe {
   margin-top: 8px;
 }
 
-button {
+button.action {
   padding: 8px 12px;
   border-radius: 10px;
   border: none;
@@ -99,12 +127,16 @@ button {
 
   <div class="panel">
     <h2>Preview</h2>
-    <iframe id="preview"></iframe>
+
+    <div class="preview-wrap" id="previewWrap">
+      <iframe id="preview"></iframe>
+      <button class="fullscreen-btn" onclick="fullscreenPreview()">⛶</button>
+    </div>
 
     <div class="buttons">
-      <button onclick="render()">Preview</button>
-      <button onclick="exportSite()">Export</button>
-      <button onclick="publish()">Publish (Netlify)</button>
+      <button class="action" onclick="render()">Preview</button>
+      <button class="action" onclick="exportSite()">Export</button>
+      <button class="action" onclick="publish()">Publish (Netlify)</button>
     </div>
   </div>
 
@@ -113,55 +145,58 @@ button {
 <script>
 const codeEl = document.getElementById("code");
 const preview = document.getElementById("preview");
+const previewWrap = document.getElementById("previewWrap");
 
 function escapeHTML(str) {
-  return str.replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 function render() {
   const code = codeEl.value;
 
-  // Detect Python-like code
-  const looksLikePython = /print\s*\(|input\s*\(|def\s+|elif|import\s+|:\s*$|True|False|None/.test(code);
-  const looksLikeHTML = /<[^>]+>/.test(code);
-  const looksLikeJS = /function\s*\(|=>|console\.log|\b(let|const|var)\b/.test(code);
-  const looksLikeCSS = /\{[\s\S]*?\}/.test(code) && /:/.test(code);
+  const looksLikePython =
+    /print\s*\(|input\s*\(|def\s+|elif|import\s+|:\s*$|True|False|None/m.test(code);
+
+  const looksLikeHTML =
+    /<[^>]+>/m.test(code);
+
+  const looksLikeCSS =
+    /\{[\s\S]*?\}/m.test(code) && /:/m.test(code);
+
+  const looksLikeJS =
+    /function\s*\(|=>|console\.log|\b(let|const|var)\b/m.test(code);
 
   if (looksLikePython && !looksLikeHTML && !looksLikeCSS && !looksLikeJS) {
-    // Show Python nicely in iframe
     preview.srcdoc = `
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { margin:0; font-family: monospace; background: #0f172a; color: #e5e7eb; padding: 12px; }
-    pre { white-space: pre-wrap; word-break: break-word; }
-    b { color: #60a5fa; }
-  </style>
-</head>
-<body>
-  <b>Python-like code (not executed):</b>
-  <pre>${escapeHTML(code)}</pre>
+<body style="font-family:monospace;background:#0f172a;color:#e5e7eb;padding:12px">
+<b>Detected: Python-like code (not executed)</b>
+<pre>${escapeHTML(code)}</pre>
 </body>
 </html>`;
     return;
   }
 
-  // Otherwise, render as full HTML/CSS/JS
+  if (looksLikeHTML) {
+    preview.srcdoc = `
+<!DOCTYPE html>
+<html>
+<body>
+${code}
+</body>
+</html>`;
+    return;
+  }
+
   preview.srcdoc = `
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { margin:0; font-family: sans-serif; background: #0f172a; color: #e5e7eb; }
-  </style>
-</head>
-<body>
-${code}
+<body style="font-family:monospace;padding:12px">
+<pre>${escapeHTML(code)}</pre>
 </body>
 </html>`;
 }
@@ -177,6 +212,12 @@ function exportSite() {
 function publish() {
   exportSite();
   window.open("https://app.netlify.com/drop", "_blank");
+}
+
+function fullscreenPreview() {
+  if (previewWrap.requestFullscreen) {
+    previewWrap.requestFullscreen();
+  }
 }
 </script>
 
