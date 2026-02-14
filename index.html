@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- Favicon only -->
-<link rel="icon" href="image.png">
+<link rel="icon" href="Favi.png">
 
 <style>
 * { box-sizing: border-box; }
@@ -112,6 +112,11 @@ button.action {
   color: white;
 }
 </style>
+
+<!-- Skulpt for Python execution -->
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/skulpt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/skulpt-stdlib.js"></script>
+
 </head>
 
 <body>
@@ -170,14 +175,36 @@ function render() {
     /function\s*\(|=>|console\.log|\b(let|const|var)\b/m.test(code);
 
   if (looksLikePython && !looksLikeHTML && !looksLikeCSS && !looksLikeJS) {
-    preview.srcdoc = `
+    function runSkulpt(code) {
+      const outContainer = `
 <!DOCTYPE html>
 <html>
 <body style="font-family:monospace;background:#0f172a;color:#e5e7eb;padding:12px">
-<b>Detected: Python-like code (not executed)</b>
-<pre>${escapeHTML(code)}</pre>
+<b>Detected: Python code (executed)</b>
+<pre id="pythonOutput"></pre>
 </body>
 </html>`;
+      preview.srcdoc = outContainer;
+
+      setTimeout(() => {
+        const iframeDoc = preview.contentDocument;
+        Sk.configure({
+          output: text => iframeDoc.getElementById("pythonOutput").textContent += text + "\n",
+          read: builtinRead
+        });
+        Sk.misceval.asyncToPromise(() =>
+          Sk.importMainWithBody("<stdin>", false, code, true)
+        ).catch(err => iframeDoc.getElementById("pythonOutput").textContent += err.toString());
+      }, 50);
+    }
+
+    function builtinRead(x) {
+      if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+        throw "File not found: '" + x + "'";
+      return Sk.builtinFiles["files"][x];
+    }
+
+    runSkulpt(code);
     return;
   }
 
