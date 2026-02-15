@@ -228,6 +228,7 @@ ${code}
 </html>`;
 }
 
+// Export / publish
 function exportSite() {
   const blob = new Blob([preview.srcdoc], { type: "text/html" });
   const a = document.createElement("a");
@@ -246,6 +247,57 @@ function fullscreenPreview() {
     previewWrap.requestFullscreen();
   }
 }
+
+// =====================
+// Auto-close brackets
+// =====================
+codeEl.addEventListener("keydown", (e) => {
+  const start = codeEl.selectionStart;
+  const end = codeEl.selectionEnd;
+  const val = codeEl.value;
+
+  const pairs = {
+    '(': ')',
+    '{': '}',
+    '[': ']'
+  };
+
+  if (e.key in pairs) {
+    e.preventDefault();
+    const insert = pairs[e.key];
+    codeEl.value = val.slice(0, start) + e.key + insert + val.slice(end);
+    codeEl.selectionStart = codeEl.selectionEnd = start + 1; // cursor in middle
+  }
+
+  // Skip closing bracket if already typed
+  if (Object.values(pairs).includes(e.key)) {
+    if (val[start] === e.key) {
+      e.preventDefault();
+      codeEl.selectionStart = codeEl.selectionEnd = start + 1;
+    }
+  }
+});
+
+// =====================
+// Auto-close HTML tags
+// =====================
+codeEl.addEventListener("keydown", (e) => {
+  const start = codeEl.selectionStart;
+  const end = codeEl.selectionEnd;
+  const val = codeEl.value;
+
+  if (e.key === '>') {
+    const before = val.slice(0, start);
+    const tagMatch = before.match(/<([a-zA-Z0-9]+)$/); // detect tag name
+    if (tagMatch) {
+      e.preventDefault();
+      const tagName = tagMatch[1];
+      const insert = '>' + `</${tagName}>`;
+      codeEl.value = val.slice(0, start) + insert + val.slice(end);
+      codeEl.selectionStart = codeEl.selectionEnd = start + 1; // cursor inside opening tag
+    }
+  }
+});
 </script>
 
 </body>
