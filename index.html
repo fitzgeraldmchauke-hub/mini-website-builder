@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <title>Mini Website Builder</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- Favicon only -->
 <link rel="icon" href="Favi.png">
 
 <style>
@@ -16,6 +14,9 @@ body {
   font-family: system-ui, sans-serif;
   background: #0f172a;
   color: #e5e7eb;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
 }
 
 header {
@@ -27,13 +28,268 @@ header {
   font-weight: 800;
 }
 
-.container {
+.main {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 12px;
   padding: 12px;
-  height: calc(100vh - 64px);
+  height: 100%;
 }
+
+.panel {
+  background: #020617;
+  border: 1px solid #1e293b;
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel h2 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #60a5fa;
+  text-transform: uppercase;
+}
+
+textarea {
+  flex: 1;
+  background: #020617;
+  color: #e5e7eb;
+  border: none;
+  outline: none;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.preview-wrap {
+  position: relative;
+  flex: 1;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: white;
+}
+
+.fullscreen-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.fullscreen-btn:hover {
+  background: rgba(0,0,0,0.8);
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+button.action {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/skulpt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/skulpt-stdlib.js"></script>
+
+</head>
+<body>
+
+<header>Mini Website Builder</header>
+
+<div class="main">
+
+  <div class="panel">
+    <h2>Code</h2>
+    <textarea id="code" placeholder="Type HTML, CSS, JS, or Python..."></textarea>
+  </div>
+
+  <div class="panel">
+    <h2>Preview</h2>
+
+    <div class="preview-wrap" id="previewWrap">
+      <iframe id="preview"></iframe>
+      <button class="fullscreen-btn" onclick="fullscreenPreview()">⛶</button>
+    </div>
+
+    <div class="buttons">
+      <button class="action" onclick="render()">Preview</button>
+      <button class="action" onclick="exportSite()">Export</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const codeEl = document.getElementById("code");
+const preview = document.getElementById("preview");
+const previewWrap = document.getElementById("previewWrap");
+
+// Autofocus editor
+function focusEditor() { codeEl.focus(); }
+window.addEventListener("load", focusEditor);
+window.addEventListener("click", focusEditor);
+
+function escapeHTML(str) {
+  return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function render() {
+  const code = codeEl.value;
+
+  const looksLikePython =
+    /print\s*\(|def\s+|import\s+|:\s*$|True|False|None/m.test(code);
+
+  const looksLikeHTML = /<[^>]+>/m.test(code);
+
+  if (looksLikePython && !looksLikeHTML) {
+    preview.srcdoc = `
+<!DOCTYPE html>
+<html>
+<body style="font-family:monospace;background:#0f172a;color:#e5e7eb;padding:12px">
+<pre id="pythonOutput"></pre>
+</body>
+</html>`;
+
+    setTimeout(() => {
+      const iframeDoc = preview.contentDocument;
+      Sk.configure({
+        output: text => iframeDoc.getElementById("pythonOutput").textContent += text + "\n",
+        read: builtinRead
+      });
+      Sk.misceval.asyncToPromise(() =>
+        Sk.importMainWithBody("<stdin>", false, code, true)
+      ).catch(err =>
+        iframeDoc.getElementById("pythonOutput").textContent += err.toString()
+      );
+    }, 50);
+
+    return;
+  }
+
+  if (looksLikeHTML) {
+    preview.srcdoc = code;
+    return;
+  }
+
+  preview.srcdoc = `<pre>${escapeHTML(code)}</pre>`;
+}
+
+function builtinRead(x) {
+  if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+    throw "File not found: '" + x + "'";
+  return Sk.builtinFiles["files"][x];
+}
+
+function exportSite() {
+  const blob = new Blob([preview.srcdoc], { type: "text/html" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "index.html";
+  a.click();
+}
+
+function fullscreenPreview() {
+  if (previewWrap.requestFullscreen) {
+    previewWrap.requestFullscreen();
+  }
+}
+
+/* =========================
+   AUTO CLOSE SYSTEM
+========================= */
+
+codeEl.addEventListener("keydown", (e) => {
+  const start = codeEl.selectionStart;
+  const end = codeEl.selectionEnd;
+  const val = codeEl.value;
+
+  const brackets = { "(": ")", "{": "}", "[": "]" };
+
+  // Bracket auto close
+  if (e.key in brackets) {
+    e.preventDefault();
+    const insert = brackets[e.key];
+    codeEl.value = val.slice(0, start) + e.key + insert + val.slice(end);
+    codeEl.selectionStart = codeEl.selectionEnd = start + 1;
+    return;
+  }
+
+  if (Object.values(brackets).includes(e.key)) {
+    if (val[start] === e.key) {
+      e.preventDefault();
+      codeEl.selectionStart = codeEl.selectionEnd = start + 1;
+      return;
+    }
+  }
+
+  // HTML auto close
+  if (e.key === ">") {
+    const before = val.slice(0, start);
+    const tagMatch = before.match(/<([a-zA-Z0-9]+)$/);
+
+    if (tagMatch) {
+      e.preventDefault();
+      const tagName = tagMatch[1].toLowerCase();
+
+      // IMG special
+      if (tagName === "img") {
+        const insert = ` src="" alt="">`;
+        codeEl.value = val.slice(0, start) + insert + val.slice(end);
+        codeEl.selectionStart = codeEl.selectionEnd = start + 6;
+        return;
+      }
+
+      // IFRAME special
+      if (tagName === "iframe") {
+        const insert = ` src="" title=""></iframe>`;
+        codeEl.value = val.slice(0, start) + insert + val.slice(end);
+        codeEl.selectionStart = codeEl.selectionEnd = start + 6; // inside src=""
+        return;
+      }
+
+      // A special
+      if (tagName === "a") {
+        const insert = ` href=""></a>`;
+        codeEl.value = val.slice(0, start) + insert + val.slice(end);
+        codeEl.selectionStart = codeEl.selectionEnd = start + 7;
+        return;
+      }
+
+      // Normal tags
+      const insert = `></${tagName}>`;
+      codeEl.value = val.slice(0, start) + insert + val.slice(end);
+      codeEl.selectionStart = codeEl.selectionEnd = start + 1;
+    }
+  }
+});
+</script>
+
+</body>
+</html>
 
 .panel {
   background: #020617;
