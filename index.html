@@ -255,6 +255,50 @@ codeEl.addEventListener("keydown", (e) => {
       e.preventDefault();
       const tagName = tagMatch[1].toLowerCase();
 
+      // =======================
+// AI TRIGGER WITH CTRL+SPACE
+// =======================
+
+codeEl.addEventListener("keydown", function(e) {
+  if (e.ctrlKey && e.code === "Space") {
+    e.preventDefault();
+
+    const start = codeEl.selectionStart;
+    const lines = codeEl.value.split("\n");
+
+    const currentLineIndex =
+      codeEl.value.substr(0, start).split("\n").length - 1;
+
+    let currentLine = lines[currentLineIndex].trim().toLowerCase();
+
+    let generated = "";
+
+    if (currentLine.includes("red button")) {
+      generated = '<button style="background:red;color:white;">Click me</button>';
+    }
+    else if (currentLine.includes("blue text")) {
+      generated = '<p style="color:blue;">Blue text</p>';
+    }
+    else if (currentLine.includes("navbar")) {
+      generated =
+`<nav style="background:#222;padding:10px;">
+  <a href="#" style="color:white;margin-right:10px;">Home</a>
+  <a href="#" style="color:white;margin-right:10px;">About</a>
+  <a href="#" style="color:white;">Contact</a>
+</nav>`;
+    }
+    else {
+      generated = "<!-- AI placeholder: not sure what you meant -->";
+    }
+
+    lines[currentLineIndex] = generated;
+    codeEl.value = lines.join("\n");
+
+    codeEl.selectionStart = codeEl.selectionEnd =
+      codeEl.value.length;
+  }
+});
+
       // IMG special
       if (tagName === "img") {
         const insert = ` src="" alt="">`;
